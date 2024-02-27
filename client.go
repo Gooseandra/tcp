@@ -3,9 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"os"
-	"sync"
+	"time"
 )
 
 func listener(conn net.Conn) {
@@ -26,11 +27,14 @@ func writer(conn net.Conn) {
 	}
 }
 
-func client(port string) {
-	conn, _ := net.Dial("tcp", "127.0.0.1:"+port)
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go listener(conn)
-	go writer(conn)
-	wg.Wait()
+func client(host, port, text string) {
+	conn, err := net.Dial("tcp", host+":"+port)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	for {
+		conn.Write([]byte(text + "\n"))
+		time.Sleep(time.Second)
+	}
 }
