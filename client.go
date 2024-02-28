@@ -6,23 +6,23 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
 )
 
 func listener(conn net.Conn) {
 	for {
 		message, _ := bufio.NewReader(conn).ReadString('\n')
-		fmt.Print("Message from server: " + message)
+		fmt.Print(message)
 	}
 }
 
-func writer(conn net.Conn) {
+func writer(conn net.Conn, mes chan string) {
 	for {
-		// Чтение входных данных от stdin
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Text to send: ")
 		text, _ := reader.ReadString('\n')
-		// Отправляем в socket
+		if text == "exit" {
+			mes <- text
+			return
+		}
 		fmt.Fprintf(conn, text+"\n")
 	}
 }
@@ -33,8 +33,13 @@ func client(host, port, text string) {
 		log.Println(err)
 		return
 	}
-	for {
-		conn.Write([]byte(text + "\n"))
-		time.Sleep(time.Second)
-	}
+	fmt.Fprintf(conn, text+"\n")
+	var exit chan string
+	go listener(conn)
+	go writer(conn, exit)
+	<-exit
+	//for {
+	//	conn.Write([]byte(text + "\n"))
+	//	time.Sleep(time.Second)
+	//}
 }
