@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -21,16 +22,35 @@ func connConversation(conn1, conn2 net.Conn) {
 	}
 }
 
+func GetLocalIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddress := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddress.IP
+}
+
 func server(port1, port2 string) {
 	fmt.Println("Launching server...")
+	fmt.Println("Server has been launched on " + GetLocalIP().String())
 
 	// Устанавливаем прослушивание порта
-	client1, _ := net.Listen("tcp", ":"+port1)
-	client2, _ := net.Listen("tcp", ":"+port2)
+	port, err := net.Listen("tcp", "127.0.0.1:"+port1)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
 	// Открываем порт
-	conn1, _ := client1.Accept()
-	conn2, _ := client2.Accept()
+	client, err := port.Accept()
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
